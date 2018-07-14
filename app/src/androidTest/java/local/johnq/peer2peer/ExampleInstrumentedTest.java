@@ -23,4 +23,13 @@ public class ExampleInstrumentedTest {
 
         assertEquals("local.johnq.peer2peer", appContext.getPackageName());
     }
+
+    @Test
+    public void testConversation(){
+        // Context of the app under test.
+        Context appContext = InstrumentationRegistry.getTargetContext();
+        assertEquals("local.johnq.peer2peer", appContext.getPackageName());
+
+    }
+
 }

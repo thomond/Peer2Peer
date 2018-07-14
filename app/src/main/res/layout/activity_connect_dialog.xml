@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ConnectDialog">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="101dp"
+        android:orientation="vertical">
+
+        <android.support.design.widget.TextInputLayout
+            android:layout_width="354dp"
+            android:layout_height="49dp">
+
+            <android.support.design.widget.TextInputEditText
+                android:id="@+id/inputURL"
+                android:layout_width="368dp"
+                android:layout_height="match_parent"
+                android:hint="URL or IP"
+                android:inputType="textUri"
+                android:singleLine="true"
+                android:textAlignment="center" />
+
+        </android.support.design.widget.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <Button
+                android:id="@+id/btnConect"
+                android:layout_width="243dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onConnectBtnPressed"
+                android:text="Connect" />
+
+            <Button
+                android:id="@+id/btnCancel"
+                android:layout_width="248dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onCancelBtnPressed"
+                android:text="Cancel"
+                android:visibility="visible" />
+        </LinearLayout>
+
+    </LinearLayout>
+</android.support.constraint.ConstraintLayout>
