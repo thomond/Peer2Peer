@@ -2,13 +2,18 @@ package local.johnq.peer2peer;
 
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.Observable;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import local.johnq.libpeer2peer.TextMessage;
 
 import local.johnq.libpeer2peer.*;
 
-public class PeerPresenter implements PeerContractInterface.PeerPresenter{
+public final class PeerPresenter extends Observable implements Runnable,  PeerContractInterface.PeerPresenter{
+    private static final PeerPresenter INSTANCE = new PeerPresenter();
+
     LinkedList<ClientConnection> mClientList;
     ListenerThread mListener;
     private Logger logger;
@@ -16,24 +21,30 @@ public class PeerPresenter implements PeerContractInterface.PeerPresenter{
 
 
 
-    PeerPresenter(){
+    private PeerPresenter(){
         mConversation = new Conversation();
         mClientList = new LinkedList();
-        mListener = new ListenerThread(9999);
+        mListener = new ListenerThread(12345);
+        logger = Logger.getLogger("peer2peer");
+        logger.addHandler(new ConsoleHandler());
+    }
+
+    public static PeerPresenter getInstance(){
+        return INSTANCE;
     }
 
     public void StartListening() {
-        mListener.run();
+        new Thread(mListener).start();
 
     }
 
     public void StopListening() {
-        mListener.stop();
-        mListener.destroy();
+       // mListener.
+        //mListener.destroy();
         mListener = null;
     }
 
-    @Override
+
     public ListenerThread GetListenerThread() throws NullPointerException {
         if (mListener == null)
             throw new NullPointerException("Listener May not have been started...");
@@ -43,8 +54,8 @@ public class PeerPresenter implements PeerContractInterface.PeerPresenter{
 
     public String AddNewConnection(String host) throws IOException{
         try {
-            ClientConnection mConn = new ClientConnection(host,9999);
-            //new Thread(mConn).start();
+            ClientConnection mConn = new ClientConnection(host,12345);
+            new Thread(mConn).start();
             mClientList.add(mConn);
         } catch (IOException e) {
             e.printStackTrace();
@@ -71,18 +82,13 @@ public class PeerPresenter implements PeerContractInterface.PeerPresenter{
     }
 
 
-    public void SendMessage(String clientConnectionID, TextMessage msg) throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
-
     public TextMessage WaitForNewMessage() throws IOException, InterruptedException {
-        return mListener.waitForNewMessage();
+        return mListener.WaitForNewMessage();
     }
 
     public void AddMessage(TextMessage textMessage) throws IOException
     {
-        mClientList.getLast().AddToQueue(textMessage);
+        mClientList.getLast().SendMessage(textMessage);
         GetActiveConversation().add(textMessage);
 
     }
@@ -100,4 +106,23 @@ public class PeerPresenter implements PeerContractInterface.PeerPresenter{
     }
 
 
+    @Override
+    public void run() {
+        StartListening();
+        while(true){
+            try {
+                // wait for new message and then notify observers
+                TextMessage t = WaitForNewMessage();
+                setChanged();
+                notifyObservers(t);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE ,e.getMessage());
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE ,e.getMessage());
+            }
+
+        }
+
+
+    }
 }

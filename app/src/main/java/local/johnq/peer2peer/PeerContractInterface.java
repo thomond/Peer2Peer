@@ -1,6 +1,7 @@
 package local.johnq.peer2peer;
 
 import java.io.IOException;
+import java.util.Observable;
 
 import local.johnq.libpeer2peer.ClientConnection;
 import local.johnq.libpeer2peer.Conversation;
@@ -8,12 +9,12 @@ import local.johnq.libpeer2peer.ListenerThread;
 import local.johnq.libpeer2peer.TextMessage;
 
 public interface PeerContractInterface {
-    interface PeerPresenter{
+    interface PeerPresenter  {
 
         void StartListening();
         void StopListening();
-        ListenerThread GetListenerThread();
-        TextMessage WaitForNewMessage() throws IOException, InterruptedException;
+        ListenerThread GetListenerThread()  throws NullPointerException;
+
 
         Conversation GetActiveConversation();
         ClientConnection GetClientConnectionById(String id);
@@ -23,7 +24,7 @@ public interface PeerContractInterface {
         void DisconnectAll()throws IOException;
         void Disconnect(String clientConnectionID)throws IOException, InterruptedException;
 
-        void SendMessage(String clientConnectionID, TextMessage msg)throws IOException;
+        TextMessage WaitForNewMessage() throws IOException, InterruptedException;
 
         void AddMessage(TextMessage textMessage) throws IOException;
 

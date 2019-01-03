@@ -32,7 +32,8 @@ public class Packet {
         byte[] buff = new byte[256];
         int ret = istream.read(buff);
         // Check for EOF
-        if (ret == -1) packSock.close();
+        if (ret == -1)
+            buff[0]=(byte)ret;
         return buff;
     }
 

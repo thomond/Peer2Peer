@@ -6,11 +6,13 @@ import java.util.Date;
 public class TextMessage {
         public String sender;
         public Direction direction;
-        public Date sendTime;
-        public Date recvTime;
+        public long sendTime;
+        public long recvTime;
         public String text;
 
-        public TextMessage(String _name, Date _time, String _text){
+        public TextMessage(){};
+
+        public TextMessage(String _name, long _time, String _text){
             sender = _name;
             sendTime = _time;
             text = _text;

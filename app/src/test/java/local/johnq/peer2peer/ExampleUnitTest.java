@@ -1,11 +1,13 @@
 package local.johnq.peer2peer;
 
+import android.text.style.TtsSpan;
+
 import org.junit.Test;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.Random;
+import java.util.Observable;
+import java.util.Observer;
 
 import local.johnq.libpeer2peer.ClientConnection;
 import local.johnq.libpeer2peer.Conversation;
@@ -28,29 +30,75 @@ public class ExampleUnitTest {
     Conversation mConversation;
     ListenerThread mListener;
     ClientConnection mClient;
-    @Test
-    public void peer_send() throws IOException {
-        mConversation = new Conversation();
-        mListener =  new ListenerThread(9999);
+    PeerPresenter presenter;
 
-        mListener.start();
-        mClient = new ClientConnection("localhost", 9999);
+    @Test
+    public void mvp_test() throws InterruptedException, IOException {
+        presenter = PeerPresenter.getInstance();
+        new Thread(presenter).start();
+        presenter.AddNewConnection("localhost");
+        presenter.addObserver(new Observer() {
+            @Override
+            public void update(Observable o, Object arg) {
+                TextMessage newMsg = (TextMessage) arg;
+                presenter.GetActiveConversation().add(newMsg);
+            }
+        });
+        Thread.sleep(5000);
+        for (int i = 0; i < 3; i++) {
+            try {
+                presenter.AddMessage(new TextMessage("me", System.currentTimeMillis(), "Hello Server"));
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        Thread.sleep(5000);
+        presenter.DisconnectAll();
+        presenter.StopListening();
+
+
+        System.out.println(presenter.GetActiveConversation().getHTML());
+    }
+
+    @Test
+    public void peer_send() throws IOException, InterruptedException {
+        mConversation = new Conversation();
+        mListener = new ListenerThread(4444);
+
+        new Thread(mListener).start();
+        mClient = new ClientConnection("localhost", 4444);
+
         new Thread() {
             @Override
             public void run() {
-                for (int i = 0; i < 2; i++) {
+                while (true) {
+                    TextMessage newMsg = null;// Blocking
                     try {
-                        Thread.sleep(1000);
+                        newMsg = mListener.WaitForNewMessage();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    mConversation.add(newMsg);
 
-                        TextMessage mMessage = new TextMessage("localhost", new Date(), "Hello Server");
+                }
+            }
+        }.start();
+
+        new Thread() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 3; i++) {
+                    try {
+
+                        TextMessage mMessage = new TextMessage("localhost", System.currentTimeMillis(), "Hello Server");
                         mConversation.add(mMessage);
                         mClient.SendMessage(mMessage);
                         //mClient.SendAll();
 
 
                     } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
@@ -62,33 +110,28 @@ public class ExampleUnitTest {
             }
         }.start();
 
-        new Thread(){
-            @Override
-            public void run() {
-                try {
-                    while(true){
-                        Thread.sleep(6000);
-                        System.out.println(mConversation.getHTML());
-                    }
+        Thread.sleep(2000);
+        mClient.Disconnect();
+        mListener.Disconnect();
 
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
+        System.out.println(mConversation.getHTML());
+    }
 
-        while(true){
-            try {
-                    TextMessage newMsg = mListener.OnRecieveMessage();// Blocking
-                    //System.out.println(newMsg.sendTime + ": " + newMsg.text + " ... " +newMsg.sender);
-                    mConversation.add(newMsg);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
 
-        }
+    @Test
+    public void date_tests(){
+        long now = System.currentTimeMillis();
 
+        /*try {
+            df.parse(new Date().toString());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }*/
+
+        System.out.println(now);
+        System.out.println(new Date(now));
+
+    }
 }
 
 

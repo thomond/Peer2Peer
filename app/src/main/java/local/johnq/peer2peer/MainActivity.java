@@ -10,6 +10,10 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import local.johnq.libpeer2peer.ClientConnection;
 import local.johnq.libpeer2peer.TextMessage;
@@ -22,11 +26,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         //setContentView(R.layout.activity_main);
         setContentView(R.layout.conversation_view);
-        mPresenter = new PeerPresenter();
+        mPresenter = PeerPresenter.getInstance();
 
         //Wrap around listener thread to avoid running on main thread
 
-        new Thread(mPresenter.GetListenerThread()).start();
+        new Thread(mPresenter).start();
         Toast.makeText(getApplicationContext(), "Listener Started", Toast.LENGTH_SHORT);
 
 
@@ -39,56 +43,16 @@ public class MainActivity extends AppCompatActivity {
         }
         Toast.makeText(getApplicationContext(), "Connected to localhost", Toast.LENGTH_SHORT);
 
-        /*
-            Runnable to wait for new message and update UI/activity related elements
-        */
-        String webViewStr = "";
-        //((WebView) (findViewById(R.id.webViewConversation))).loadData(webViewStr, "text/html", null);
 
-        new Thread() {
+        // Observer to wait for any incoming messages
+        mPresenter.addObserver(new Observer() {
             @Override
-            public void run() {
-                while(true){
-                    try {
-                        // Wait in BG for new message and add to current conversation
-                        TextMessage msg = mPresenter.GetListenerThread().waitForNewMessage();
-                        mPresenter.GetActiveConversation().add(msg);
-                        // Update webview with conversation
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                ((WebView) (findViewById(R.id.webViewConversation))).loadData( mPresenter.GetActiveConversation().getHTML(), "text/html", null);
-                            }
-                        });
-                    } catch (InterruptedException e) {
-                        Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT);
-                        e.printStackTrace();
-                    }
-                }
-
+            public void update(Observable o, Object arg) {
+                TextMessage newMsg = (TextMessage)arg;
+                mPresenter.GetActiveConversation().add(newMsg);
+                ((WebView) (findViewById(R.id.webViewConversation))).loadData( mPresenter.GetActiveConversation().getHTML(), "text/html", null);
             }
-        }.start();
-        new Thread(){
-            @Override
-            public void run(){
-                while(true){
-                    try {// If there is clients and it has pending messages try to send them all
-                        if(!mPresenter.mClientList.isEmpty()) {
-                            for(ClientConnection c :mPresenter.mClientList){
-                                if(c.HasPendingSends())
-                                    c.SendAll();
-                            }
-
-                        }
-                    }catch (IOException e){
-                        Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT);
-                        e.printStackTrace();
-                    }
-
-                }
-
-            }
-        }.start();
+        });
 
     }
 
@@ -97,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             String input = ((TextInputEditText) findViewById(R.id.inputMessage)).getText().toString();
 
-            TextMessage mMessage = new TextMessage("localhost", new Date(), input);
+            TextMessage mMessage = new TextMessage("localhost", System.currentTimeMillis(), input);
 
             mPresenter.AddMessage(mMessage);
         } catch (IOException e) {

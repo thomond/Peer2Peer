@@ -18,10 +18,6 @@
         </activity>
         <activity android:name=".ConnectDialog" />
 
-        <service
-            android:name=".ListenerService"
-            android:enabled="true"
-            android:exported="true"></service>
     </application>
 <uses-permission android:name="android.permission.INTERNET" />
 </manifest>
